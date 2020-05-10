@@ -1,6 +1,7 @@
 # RemitTracker
 Perequites:
 ```
+pip3 install cloud4rpi
 git clone https://github.com/waveshare/e-Paper.git
 git clone https://github.com/cloud4rpi/cloud4rpi-raspberrypi-python.git
 ```
