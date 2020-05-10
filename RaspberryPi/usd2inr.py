@@ -113,6 +113,7 @@ def RiaRate():
             if response_auth.status_code == 200:
                 token = response_auth.headers.get("bearer")
                 header_calc = {"Authorization": f"Bearer {token}", "Content-Type": "application/json;charset=UTF-8"}
+                # Replace "countryTo": "IN" with Other Cuntry Code if needed
                 payload = {"Selections": {"amountFrom": "", "countryTo": "IN", "currencyTo": None}}
                 response_rate = requests.post(base_url_ria + "/api/MoneyTransferCalculator/Calculate", headers=header_calc, json=payload)
                 if response_rate.status_code == 200:
@@ -184,23 +185,23 @@ def main():
                 variables = {
                     "Fx Rate": {
                         "type": "numeric",
-                        "value": fx_rate
+                        "value": fx_rate if fx_rate != 0 else ""
                     },
                     "Instarem": {
                         "type": "numeric",
-                        "value": rate_instarem
+                        "value": rate_instarem if rate_instarem != 0 else ""
                     },
                     "Remitly": {
                         "type": "numeric",
-                        "value": rate_remitly
+                        "value": rate_remitly if rate_remitly != 0 else ""
                     },
                     "Xoom": {
                         "type": "numeric",
-                        "value": rate_xoom
+                        "value": rate_xoom if rate_xoom != 0 else ""
                     },
                     "Ria": {
                         "type": "numeric",
-                        "value": rate_ria
+                        "value": rate_ria if rate_ria != 0 else ""
                     }
                 }
                 device.declare(variables)
