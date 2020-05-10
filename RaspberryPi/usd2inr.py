@@ -31,9 +31,6 @@ picdir = "/home/pi/e-Paper/RaspberryPi&JetsonNano/python/pic"
 font20 = ImageFont.truetype(os.path.join(picdir, "Font.ttc"), 20)
 font24 = ImageFont.truetype(os.path.join(picdir, "Font.ttc"), 24)
 
-source_currency = "USD"
-destination_currency = "INR"
-
 
 def get_icon(name):
     iconsdir = os.path.dirname(__file__)
@@ -51,6 +48,8 @@ def get_icon(name):
 
 def InstaRemRate():
     base_url_instarem = "https://www.instarem.com"
+    source_currency = "USD"
+    destination_currency = "INR"
     instarem_bank_account_id = 58
     source_amount = 1000
     params = {
@@ -114,7 +113,7 @@ def RiaRate():
             if response_auth.status_code == 200:
                 token = response_auth.headers.get("bearer")
                 header_calc = {"Authorization": f"Bearer {token}", "Content-Type": "application/json;charset=UTF-8"}
-                payload = {"Selections": {"amountFrom": "", "countryTo": destination_currency, "currencyTo": None}}
+                payload = {"Selections": {"amountFrom": "", "countryTo": "IN", "currencyTo": None}}
                 response_rate = requests.post(base_url_ria + "/api/MoneyTransferCalculator/Calculate", headers=header_calc, json=payload)
                 if response_rate.status_code == 200:
                     data = round(response_rate.json()["model"]["transferDetails"]["calculations"]["exchangeRate"], 2)
@@ -174,14 +173,14 @@ def main():
             draw.rectangle((0, 104, 249, 121), fill=255, outline=0)
             epd.displayPartial(epd.getbuffer(image))
             currentperf = time.time()
-            diagnostics = {
+            try:
+                diagnostics = {
                 "CPU Temp": rpi.cpu_temp,
                 "IP Address": rpi.ip_address,
                 "Host": rpi.host_name,
                 "Operating System": rpi.os_name,
                 "Client Version:": cloud4rpi.__version__,
-            }
-            try:
+                }
                 variables = {
                     "Fx Rate": {
                         "type": "numeric",
