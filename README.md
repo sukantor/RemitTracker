@@ -1,4 +1,7 @@
 # RemitTracker
+* This Script will help to get best Exchange rate when sending Money from USA to India. This is fun project to learn Python, Raspberry Pi, e-Ink Display.
+* Altough this is customised for  USD to INR but can be modified to any other combination with little effort.
+
 Perequites:
 ```
 pip3 install cloud4rpi
