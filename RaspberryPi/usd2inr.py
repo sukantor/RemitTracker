@@ -31,6 +31,10 @@ picdir = "/home/pi/e-Paper/RaspberryPi&JetsonNano/python/pic"
 font20 = ImageFont.truetype(os.path.join(picdir, "Font.ttc"), 20)
 font24 = ImageFont.truetype(os.path.join(picdir, "Font.ttc"), 24)
 
+source_currency = "USD"
+destination_currency = "INR"
+source_amount = 1000
+
 
 def get_icon(name):
     iconsdir = os.path.dirname(__file__)
@@ -42,16 +46,41 @@ def get_icon(name):
         return Image.open(os.path.join(iconsdir, "../images/xoom.png"))
     elif "ria" in name:
         return Image.open(os.path.join(iconsdir, "../images/ria.png"))
+    elif "transferwise" in name:
+        return Image.open(os.path.join(iconsdir, "../images/transferwise.png"))
     else:
         return None
 
 
+def TransferWise():
+    success = False
+    data = 0
+    base_url_transferwise = "https://transferwise.com"
+    params = {
+        "sourceCurrency": source_currency,
+        "targetCurrency": destination_currency,
+        "sourceAmount": source_amount
+    }
+    uri = base_url_transferwise + "/gateway/v2/quotes/"
+    try:
+        req_ob = requests.post(uri, json=params)
+        if req_ob.status_code == 200:
+            result = req_ob.json()
+            for eachtype in result["paymentOptions"]:
+                if "DIRECT_DEBIT" in eachtype["payIn"]:
+                    data = round(eachtype["targetAmount"]/source_amount, 2)
+                    success = True
+                    break
+        else:
+            print("Error Accessing ", uri, "Error Code: ", req_ob.status_code)
+    except Exception as e:
+        print(e)
+    return(success, data)
+
+
 def InstaRemRate():
     base_url_instarem = "https://www.instarem.com"
-    source_currency = "USD"
-    destination_currency = "INR"
     instarem_bank_account_id = 58
-    source_amount = 1000
     params = {
         "source_currency": source_currency,
         "destination_currency": destination_currency,
@@ -148,8 +177,10 @@ def main():
             status, rate_xoom = XoomRate()
             # Ria Rate
             status, rate_ria = RiaRate()
+            # Transferwise Rate
+            status, rate_transferwise = TransferWise()
             datetime = time.strftime("%m/%d/%y %H:%M:%S")
-            print(f"FX Rate: {fx_rate} Instarem: {rate_instarem} Remitly: {rate_remitly} Xoom: {rate_xoom} Ria: {rate_ria}  Last Updated {datetime}")
+            print(f"FX Rate: {fx_rate} Instarem: {rate_instarem} Remitly: {rate_remitly} Xoom: {rate_xoom} Ria: {rate_ria}, TransferWise: {rate_transferwise}  Last Updated {datetime}")
             draw.rectangle([(0, 0), (epd.height, 26)], fill=255)
             draw.text((0, 0), f"$1 = {fx_rate}", font=font24, fill=0)
             draw.text((140, 2), time.strftime("%m/%d %H:%M"), font=font20, fill=0)
@@ -158,14 +189,16 @@ def main():
                 "instarem": rate_instarem,
                 "remitly": rate_remitly,
                 "xoom": rate_xoom,
-                "ria": rate_ria
+                "ria": rate_ria,
+                "transferwise": rate_transferwise
                 }
             rate_sorted = sorted(rate_all.items(), key=lambda x: x[1], reverse=True)
             draw.rectangle([(0, 75), (epd.height, 105)], fill=255)
             ypos_icon = 10
             ypos_rate = 0
             space_icon = 65
-            for name, rate in rate_sorted:
+            # Only Top 4 to Display
+            for name, rate in rate_sorted[0:4]:
                 image.paste(get_icon(name), (ypos_icon, 40))
                 if rate != 0:
                     draw.text((ypos_rate, 75), str(rate), font=font20, fill=0)
@@ -176,36 +209,41 @@ def main():
             currentperf = time.time()
             try:
                 diagnostics = {
-                "CPU Temp": rpi.cpu_temp,
-                "IP Address": rpi.ip_address,
-                "Host": rpi.host_name,
-                "Operating System": rpi.os_name,
-                "Client Version:": cloud4rpi.__version__,
+                    "CPU Temp": rpi.cpu_temp,
+                    "IP Address": rpi.ip_address,
+                    "Host": rpi.host_name,
+                    "Operating System": rpi.os_name,
+                    "Client Version:": cloud4rpi.__version__,
                 }
                 variables = {
                     "Fx Rate": {
-                        "type": "numeric",
-                        "value": fx_rate if fx_rate != 0 else ""
+                        "type": "numeric" if fx_rate else "string",
+                        "value": fx_rate if fx_rate else "N/A"
                     },
                     "Instarem": {
-                        "type": "numeric",
-                        "value": rate_instarem if rate_instarem != 0 else ""
+                        "type": "numeric" if rate_instarem else "string",
+                        "value": rate_instarem if rate_instarem else "N/A"
                     },
                     "Remitly": {
-                        "type": "numeric",
-                        "value": rate_remitly if rate_remitly != 0 else ""
+                        "type": "numeric" if rate_remitly else "string",
+                        "value": rate_remitly if rate_remitly else "N/A"
                     },
                     "Xoom": {
-                        "type": "numeric",
-                        "value": rate_xoom if rate_xoom != 0 else ""
+                        "type": "numeric" if rate_xoom else "string",
+                        "value": rate_xoom if rate_xoom else "N/A"
                     },
                     "Ria": {
-                        "type": "numeric",
-                        "value": rate_ria if rate_ria != 0 else ""
+                        "type": "numeric" if rate_ria else "string",
+                        "value": rate_ria if rate_ria else "N/A"
+                    },
+                    "TransferWise": {
+                        "type": "numeric" if rate_transferwise else "string",
+                        "value": rate_transferwise if rate_transferwise else "N/A"
                     }
                 }
                 device.declare(variables)
                 device.declare_diag(diagnostics)
+                # Uncomment Below 2 Lines in first run after Cloud4Rpi Device Creation
                 # device.publish_config()
                 # time.sleep(1)
                 device.publish_diag()
